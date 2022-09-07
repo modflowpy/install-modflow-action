@@ -4,7 +4,6 @@ inputs:
   path:
     description: Path to store the executables (e.g. a bin directory)
     required: true
-    default: bin
   github_token:
     description: GitHub API access token
     required: true
@@ -15,20 +14,6 @@ runs:
       uses: actions/setup-python@v4
       with:
         python-version: 3.9
-
-    - name: Install FloPy
-      if: runner.os != 'Windows'
-      shell: bash
-      run: |
-        # TODO use version on PyPI when release with get-modflow is out
-        pip install https://github.com/modflowpy/flopy/zipball/develop
-
-    - name: Install FloPy
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: |
-        # TODO use version on PyPI when release with get-modflow is out
-        pip install https://github.com/modflowpy/flopy/zipball/develop
 
     - name: Make bin directory
       if: runner.os != 'Windows'
@@ -94,11 +79,24 @@ runs:
         path: ${{ inputs.path }}
         key: modflow-exes-${{ runner.os }}-${{ hashFiles('executables.json') }}
 
+    - name: Download get-modflow script
+      if: runner.os != 'Windows' && steps.cache_executables.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        wget https://raw.githubusercontent.com/modflowpy/flopy/develop/flopy/utils/get_modflow.py -P ~/.local/bin
+
+    - name: Download get-modflow script (Windows)
+      if: runner.os == 'Windows' && steps.cache_executables.outputs.cache-hit != 'true'
+      working-directory: C:\Users\runneradmin\.local\bin
+      shell: pwsh
+      run: |
+        Invoke-WebRequest https://raw.githubusercontent.com/modflowpy/flopy/develop/flopy/utils/get_modflow.py -OutFile C:\Users\runneradmin\.local\bin\get_modflow.py
+
     - name: Install executables
       if: runner.os != 'Windows' && steps.cache_executables.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        get-modflow ${{ inputs.path }}
+        python ~/.local/bin/get_modflow.py ${{ inputs.path }}
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
 
@@ -106,7 +104,7 @@ runs:
       if: runner.os == 'Windows' && steps.cache_executables.outputs.cache-hit != 'true'
       shell: pwsh
       run: |
-        get-modflow ${{ inputs.path }}
+        python C:\Users\runneradmin\.local\bin\get_modflow.py ${{ inputs.path }}
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
 

@@ -26,16 +26,16 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install requests
-      - name: Install executables
+      - name: Install MODFLOW executables
         uses: ./
         with:
           path: ~/.local/bin
           github_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check executables
+      - name: Check MODFLOW executables
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python scripts/verify_install.py ~/.local/bin
+          python scripts/test_install.py ~/.local/bin
   test_windows:
     name: Test (Windows)
     runs-on: windows-latest
@@ -49,13 +49,13 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install requests
-      - name: Install executables
+      - name: Install MODFLOW executables
         uses: ./
         with:
           path: C:\Users\runneradmin\.local\bin
           github_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check executables
+      - name: Check MODFLOW executables
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python scripts/verify_install.py C:\Users\runneradmin\.local\bin
+          python scripts/test_install.py C:\Users\runneradmin\.local\bin
