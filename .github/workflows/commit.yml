@@ -1,0 +1,61 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+jobs:
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+      - name: Install Python dependencies
+        run: |
+          pip install requests
+      - name: Install executables
+        uses: ./
+        with:
+          path: ~/.local/bin
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check executables
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python scripts/verify_install.py ~/.local/bin
+  test_windows:
+    name: Test (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+      - name: Install Python dependencies
+        run: |
+          pip install requests
+      - name: Install executables
+        uses: ./
+        with:
+          path: C:\Users\runneradmin\.local\bin
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check executables
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python scripts/verify_install.py C:\Users\runneradmin\.local\bin
