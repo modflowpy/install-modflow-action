@@ -1,7 +1,6 @@
 # install-modflow-action
 
 [![CI](https://github.com/modflowpy/install-modflow-action/actions/workflows/commit.yml/badge.svg?branch=develop)](https://github.com/modflowpy/install-modflow-action/actions/workflows/commit.yml)
-![Status](https://img.shields.io/badge/-under%20development-yellow?style=flat-square)
 
 An action to install executables for MODFLOW and related programs from the [executables distribution repository](https://github.com/MODFLOW-USGS/executables).
 
