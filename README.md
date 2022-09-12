@@ -22,7 +22,7 @@ To use this action, add a step like the following to your workflow:
 
 ```yaml
 - name: Install executables
-  uses: modflowpy/install-modflow-action@v0.0.1
+  uses: modflowpy/install-modflow-action@v1
   with:
       path: ~/.local/bin
       github_token: ${{ secrets.GITHUB_TOKEN }}

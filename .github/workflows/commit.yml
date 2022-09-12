@@ -31,11 +31,11 @@ jobs:
         with:
           path: ~/.local/bin
           github_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check MODFLOW executables
+      - name: Test MODFLOW executables
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python scripts/test_install.py ~/.local/bin
+          python test/test.py ~/.local/bin
   test_windows:
     name: Test (Windows)
     runs-on: windows-latest
@@ -54,8 +54,8 @@ jobs:
         with:
           path: C:\Users\runneradmin\.local\bin
           github_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check MODFLOW executables
+      - name: Test MODFLOW executables
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python scripts/test_install.py C:\Users\runneradmin\.local\bin
+          python test/test.py C:\Users\runneradmin\.local\bin
