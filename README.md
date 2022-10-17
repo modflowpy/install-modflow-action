@@ -1,6 +1,6 @@
 # install-modflow-action
 
-[![CI](https://github.com/modflowpy/install-modflow-action/actions/workflows/commit.yml/badge.svg?branch=develop)](https://github.com/modflowpy/install-modflow-action/actions/workflows/commit.yml)
+[![CI](https://github.com/modflowpy/install-modflow-action/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/modflowpy/install-modflow-action/actions/workflows/ci.yml)
 
 An action to install MODFLOW 6 and related programs.
 
@@ -14,6 +14,8 @@ An action to install MODFLOW 6 and related programs.
     - [`github_token`](#github_token)
     - [`path`](#path)
     - [`repo`](#repo)
+  - [Outputs](#outputs)
+    - [`cache-hit`](#cache-hit)
 - [MODFLOW Resources](#modflow-resources)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -52,9 +54,7 @@ The example above uses the [automatically provided](https://docs.github.com/en/a
 
 #### `path`
 
-The `path` input is the location to install executables, e.g. a local bin directory.
-
-**Note**: tilde expansion only works on Linux and Mac runners. The example above is suitable for Linux and Mac &mdash; on Windows a similar location might be `C:\Users\runneradmin\.local\bin`.
+The `path` input is the location to install executables. The path may be absolute or relative to the workflow's working directory. Tilde expansion is also supported on all three major platforms. The resolved path is stored in the `MODFLOW_BIN_PATH` environment variable, which is then available to subsequent workflow steps.
 
 #### `repo`
 
@@ -63,6 +63,21 @@ The `repo` input allows selecting which MODFLOW 6 executable distribution to ins
 - `executables` (default)
 - `modflow6`
 - `modflow6-nightly-build`
+
+### Outputs
+
+The action has the following outputs:
+
+- `cache-hit`
+
+#### `cache-hit`
+
+The `cache-hit` output simply forwards the internal `actions/cache` output of the same name, and is `true` if a matching entry was found and `false` if not.
+
+Cache keys follow pattern `modflow-${{ runner.os }}-${{ inputs.repo }}-${{ hashFiles('code.json') }}`, where `code.json` is a JSON file containing version metadata. (This file is currently distributed only with the `executables` distribution, but is to be added to the others in forthcoming releases.) Thus separate caches are maintained for each combination of platform and distribution repository, and the cache is invalidated
+
+1. when `code.json` changes, or
+2. when `code.json` is added to a distribution.
 
 ## MODFLOW Resources
 

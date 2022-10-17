@@ -18,6 +18,7 @@ jobs:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
         gm: [flopy, standalone]
         repo: [executables, modflow6, modflow6-nightly-build]
+        path: [absolute, relative, tilde]
     defaults:
       run:
         shell: bash
@@ -35,16 +36,30 @@ jobs:
         if: matrix.gm == 'flopy'
         run: |
           pip install git+https://github.com/modflowpy/flopy.git
-      - name: Set bin directory
+      - name: Set bin path
         if: runner.os != 'Windows'
         run: |
-          bindir="$HOME/.local/bin"
+          if [ "${{ matrix.path }}" == "absolute" ]; then
+            bindir="$HOME/.local/bin"
+          elif [ "${{ matrix.path }}" == "relative" ]; then
+            bindir="bin"
+          else
+            bindir="~/.local/bin"
+          fi
+
           echo "TEST_BINDIR=$bindir" >> $GITHUB_ENV
-      - name: Set bin directory
+      - name: Set bin path (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $bindir = "C:\Users\runneradmin\.local\bin"
+          if ("${{ matrix.path }}" -eq "absolute") {
+            $bindir = "C:\Users\runneradmin\.local\bin"
+          } elseif ("${{ matrix.path }}" -eq "relative") {
+            $bindir = "bin"
+          } else {
+            $bindir = "~/.local/bin"
+          }
+
           echo "TEST_BINDIR=$bindir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Install executables
         id: install_executables
@@ -56,7 +71,6 @@ jobs:
       - name: Test installation
         run: |
           script_path="$RUNNER_TEMP/get_modflow.py"
-          bin_path="$HOME/.local/bin"
 
           if [ ${{ matrix.gm }} == "standalone" ] && [ ${{ steps.install_executables.outputs.cache-hit }} != "true" ]
           then
@@ -69,6 +83,6 @@ jobs:
             fi
           fi
 
-          python test/test_exes.py $bin_path ${{ matrix.repo }}
+          python test/test_exes.py $TEST_BINDIR ${{ matrix.repo }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

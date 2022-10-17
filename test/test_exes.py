@@ -6,7 +6,7 @@ import requests
 from shutil import which
 import sys
 
-path = Path(sys.argv[1])
+path = Path(sys.argv[1]).expanduser().absolute()
 if not path:
     raise ValueError(f"Must specify install location")
 
