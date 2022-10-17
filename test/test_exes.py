@@ -103,3 +103,8 @@ pprint(expected)
 for exe in expected:
     assert which(exe), f"Executable {exe} not found on path"
 print(f"Verified executables are on system path")
+
+# check bin path environment variable is set
+env_var = environ.get("MODFLOW_BIN_PATH")
+assert env_var
+assert Path(env_var).is_dir()
