@@ -6,7 +6,7 @@ import requests
 from shutil import which
 import sys
 
-path = Path(sys.argv[1])
+path = Path(sys.argv[1]).expanduser().absolute()
 if not path:
     raise ValueError(f"Must specify install location")
 
@@ -103,3 +103,8 @@ pprint(expected)
 for exe in expected:
     assert which(exe), f"Executable {exe} not found on path"
 print(f"Verified executables are on system path")
+
+# check bin path environment variable is set
+env_var = environ.get("MODFLOW_BIN_PATH")
+assert env_var
+assert Path(env_var).is_dir()

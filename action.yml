@@ -1,36 +1,38 @@
-name: Install MODFLOW executables
-description: Install & cache MODFLOW executables from the MODFLOW-USGS/executables repository
+name: Install MODFLOW
+description: Install & cache MODFLOW 6 and related programs.
 inputs:
-  path:
-    description: Path to store the executables (e.g. a bin directory)
-    required: true
   github_token:
     description: GitHub API access token
     required: true
+  path:
+    description: Path to store the executables (e.g. a bin directory)
+    required: true
   repo:
-    description: The repository to install executables from ('executables', 'modflow6', or 'modflow6-nightly-build')
+    description: Repository to install executables from ('executables', 'modflow6', or 'modflow6-nightly-build')
     required: false
     default: executables
 outputs:
   cache-hit:
-    description: Whether MODFLOW executables were restored from the cache.
+    description: Whether a matching entry was found in the Github Actions cache
     value: ${{ steps.cache_executables.outputs.cache-hit }}
 runs:
   using: composite
   steps:
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.9
-
-    - name: Create bin directory
+    - if: runner.os != 'Windows'
       shell: bash
       run: |
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          mkdir -p "${{ inputs.path }}"
-        else
-          mkdir -p ${{ inputs.path }}
-        fi
+        normalized=$(python3 $GITHUB_ACTION_PATH/normalize_path.py "${{ inputs.path }}")
+        echo "Normalized bin dir path: $normalized"
+        echo "MODFLOW_BIN_PATH=$normalized" >> $GITHUB_ENV
+        mkdir -p "$normalized"
+
+    - if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $normalized = $(python3 $(Join-Path -Path "$env:GITHUB_ACTION_PATH" -ChildPath "normalize_path.py") "${{ inputs.path }}")
+        echo "Normalized bin dir path: $normalized"
+        echo "MODFLOW_BIN_PATH=$normalized" | Out-File -FilePath "$env:GITHUB_ENV" -Encoding utf8 -Append
+        md -Force "$normalized"
 
     - name: Check release
       shell: bash
@@ -47,7 +49,7 @@ runs:
         metadata = next(iter([a for a in release['assets'] if a['name'] == pattern]), None)
         print(dict(metadata)['id'] if metadata else '')
         "
-        asset_id=$(echo "$release_json" | python -c "$get_asset_id") || echo "No release to check, skipping"
+        asset_id=$(echo "$release_json" | python3 -c "$get_asset_id") || echo "No release to check, skipping"
 
         # asset_id is empty if metadata file asset wasn't found
         if [ ${#asset_id} -gt 0 ]; then
@@ -63,8 +65,8 @@ runs:
       id: cache_executables
       uses: actions/cache@v3
       with:
-        path: ${{ inputs.path }}
-        key: modflow-exes-${{ runner.os }}-${{ inputs.repo }}-${{ hashFiles('code.json') }}
+        path: ${{ env.MODFLOW_BIN_PATH }}
+        key: modflow-${{ runner.os }}-${{ inputs.repo }}-${{ hashFiles('code.json') }}
 
     - name: Install executables
       if: steps.cache_executables.outputs.cache-hit != 'true'
@@ -72,23 +74,15 @@ runs:
       run: |
         if command -v get-modflow &> /dev/null
         then
-          echo "get-modflow command is available (FloPy is probably installed)"
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            get-modflow "${{ inputs.path }}" --repo ${{ inputs.repo }}
-          else
-            get-modflow ${{ inputs.path }} --repo ${{ inputs.repo }}
-          fi
+          echo "get-modflow command is available, running get-modflow"
+          get-modflow "$MODFLOW_BIN_PATH" --repo ${{ inputs.repo }}
         else
-          echo "downloading get-modflow script"
+          echo "get-modflow command not available, downloading get_modflow.py"
           script_path="$RUNNER_TEMP/get_modflow.py"
-
           curl https://raw.githubusercontent.com/modflowpy/flopy/develop/flopy/utils/get_modflow.py -o "$script_path"
 
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            python $script_path "${{ inputs.path }}" --repo "${{ inputs.repo }}"
-          else
-            python $script_path ${{ inputs.path }} --repo "${{ inputs.repo }}"
-          fi
+          echo "running get_modflow.py"
+          python3 $script_path "$MODFLOW_BIN_PATH" --repo "${{ inputs.repo }}"
         fi
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
@@ -97,12 +91,12 @@ runs:
       if: runner.os != 'Windows'
       shell: bash
       run: |
-        normalized="`cd "${{ inputs.path }}";pwd`"
-        echo "$normalized" >> $GITHUB_PATH
+        echo "adding bin dir '$MODFLOW_BIN_PATH' to path"
+        echo "$MODFLOW_BIN_PATH" >> $GITHUB_PATH
 
     - name: Add executables to path (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        $normalized = $(Resolve-Path ${{ inputs.path }}).ToString()
-        echo $normalized | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        echo "adding bin dir '$env:MODFLOW_BIN_PATH' to path"
+        echo $env:MODFLOW_BIN_PATH | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
