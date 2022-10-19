@@ -33,28 +33,25 @@ To use this action, add a step like the following to your workflow:
 ```yaml
 - name: Install MODFLOW 6
   uses: modflowpy/install-modflow-action@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    path: ~/.local/bin
 ```
 
 ### Inputs
 
-The action accepts the following inputs:
+The action accepts the following optional inputs:
 
-- `github_token` (required)
-- `path` (required)
-- `repo` (optional)
+- `path`
+- `repo`
+- `github_token`
 
 #### `github_token`
 
-Because composite GitHub Actions [do not have access to secrets](https://stackoverflow.com/a/70111134/6514033), a GitHub API token must be provided via the `github_token` input (this avoids HTTP errors due to rate-limiting).
-
-The example above uses the [automatically provided](https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret) `GITHUB_TOKEN` secret, but a personal access token may be provided as well.
+By default, the action uses the [automatically provided](https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret) `GITHUB_TOKEN` secret, but an access token may be explicitly provided as well.
 
 #### `path`
 
 The `path` input is the location to install executables. The path may be absolute or relative to the workflow's working directory. Tilde expansion is also supported on all three major platforms. The resolved path is stored in the `MODFLOW_BIN_PATH` environment variable, which is then available to subsequent workflow steps.
+
+The default path, shared on all three platforms, is `~/.local/bin/modflow`.
 
 #### `repo`
 

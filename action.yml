@@ -1,24 +1,26 @@
 name: Install MODFLOW
 description: Install & cache MODFLOW 6 and related programs.
 inputs:
-  github_token:
-    description: GitHub API access token
-    required: true
   path:
-    description: Path to store the executables (e.g. a bin directory)
-    required: true
+    description: Path to install location (e.g. a bin directory)
+    required: false
+    default: ~/.local/bin/modflow
   repo:
     description: Repository to install executables from ('executables', 'modflow6', or 'modflow6-nightly-build')
     required: false
     default: executables
+  github_token:
+    description: GitHub API access token
+    required: false
 outputs:
   cache-hit:
-    description: Whether a matching entry was found in the Github Actions cache
-    value: ${{ steps.cache_executables.outputs.cache-hit }}
+    description: Whether the installation was restored from cache
+    value: ${{ steps.cache-modflow.outputs.cache-hit }}
 runs:
   using: composite
   steps:
-    - if: runner.os != 'Windows'
+    - name: Set install path variable
+      if: runner.os != 'Windows'
       shell: bash
       run: |
         normalized=$(python3 $GITHUB_ACTION_PATH/normalize_path.py "${{ inputs.path }}")
@@ -26,13 +28,26 @@ runs:
         echo "MODFLOW_BIN_PATH=$normalized" >> $GITHUB_ENV
         mkdir -p "$normalized"
 
-    - if: runner.os == 'Windows'
+    - name: Set install path variable (Windows)
+      if: runner.os == 'Windows'
       shell: pwsh
       run: |
         $normalized = $(python3 $(Join-Path -Path "$env:GITHUB_ACTION_PATH" -ChildPath "normalize_path.py") "${{ inputs.path }}")
         echo "Normalized bin dir path: $normalized"
         echo "MODFLOW_BIN_PATH=$normalized" | Out-File -FilePath "$env:GITHUB_ENV" -Encoding utf8 -Append
         md -Force "$normalized"
+
+    - name: Set github token
+      id: set-github-token
+      shell: bash
+      run: |
+        if [ "${{ inputs.github_token }}" == "" ]; then
+          token="${{ github.token }}"
+        else
+          token="${{ inputs.github_token }}"
+        fi
+        
+        echo "token=$token" >> $GITHUB_OUTPUT
 
     - name: Check release
       shell: bash
@@ -59,17 +74,17 @@ runs:
           touch code.json
         fi
       env:
-        GH_TOKEN: ${{ inputs.github_token }}
+        GH_TOKEN: ${{ steps.set-github-token.outputs.token }}
 
     - name: Cache executables
-      id: cache_executables
+      id: cache-modflow
       uses: actions/cache@v3
       with:
         path: ${{ env.MODFLOW_BIN_PATH }}
         key: modflow-${{ runner.os }}-${{ inputs.repo }}-${{ hashFiles('code.json') }}
 
     - name: Install executables
-      if: steps.cache_executables.outputs.cache-hit != 'true'
+      if: steps.cache-modflow.outputs.cache-hit != 'true'
       shell: bash
       run: |
         if command -v get-modflow &> /dev/null
@@ -85,7 +100,7 @@ runs:
           python3 $script_path "$MODFLOW_BIN_PATH" --repo "${{ inputs.repo }}"
         fi
       env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
+        GITHUB_TOKEN: ${{ steps.set-github-token.outputs.token }}
 
     - name: Add executables to path
       if: runner.os != 'Windows'
