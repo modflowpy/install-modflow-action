@@ -4,7 +4,7 @@ inputs:
   path:
     description: Path to install location (e.g. a bin directory)
     required: false
-    default: ~/.local/bin/modflow
+    default: "~/.local/bin/modflow"
   repo:
     description: Repository to install executables from ('executables', 'modflow6', or 'modflow6-nightly-build')
     required: false
@@ -23,7 +23,9 @@ runs:
       if: runner.os != 'Windows'
       shell: bash
       run: |
-        normalized=$(python3 $GITHUB_ACTION_PATH/normalize_path.py "${{ inputs.path }}")
+        path="${{ inputs.path }}"
+        path=${path:="~/.local/bin/modflow"}
+        normalized=$(python3 $GITHUB_ACTION_PATH/normalize_path.py "$path")
         echo "Normalized bin dir path: $normalized"
         echo "MODFLOW_BIN_PATH=$normalized" >> $GITHUB_ENV
         mkdir -p "$normalized"
@@ -32,7 +34,9 @@ runs:
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        $normalized = $(python3 $(Join-Path -Path "$env:GITHUB_ACTION_PATH" -ChildPath "normalize_path.py") "${{ inputs.path }}")
+        $path = "${{ inputs.path }}"
+        $path = $(if ($path) { $path } else { "~/.local/bin/modflow" })
+        $normalized = $(python3 $(Join-Path -Path "$env:GITHUB_ACTION_PATH" -ChildPath "normalize_path.py") "$path")
         echo "Normalized bin dir path: $normalized"
         echo "MODFLOW_BIN_PATH=$normalized" | Out-File -FilePath "$env:GITHUB_ENV" -Encoding utf8 -Append
         md -Force "$normalized"

@@ -6,13 +6,8 @@ import requests
 from shutil import which
 import sys
 
-path = Path(sys.argv[1]).expanduser().absolute()
-if not path:
-    raise ValueError(f"Must specify install location")
-
-repo = sys.argv[2]
-if not repo:
-    repo = "executables"
+path = Path(sys.argv[1] if sys.argv[1] else "~/.local/bin/modflow").expanduser().absolute()
+repo = sys.argv[2] if (len(sys.argv) > 1 and sys.argv[2]) else "executables"
 
 print(f"Path: {path}")
 print(f"Repo: {repo}")
