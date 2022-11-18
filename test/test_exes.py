@@ -5,6 +5,7 @@ from pprint import pprint
 import requests
 from shutil import which
 import sys
+from typing import List, Tuple
 
 path = Path(sys.argv[1] if sys.argv[1] else "~/.local/bin/modflow").expanduser().absolute()
 repo = sys.argv[2] if (len(sys.argv) > 1 and sys.argv[2]) else "executables"
@@ -50,9 +51,14 @@ expected_exes = {
         'zbud6',
     ]
 }
+expected_libs = {
+    "executables": ["libmf6"],
+    "modflow6": ["libmf6"],
+    "modflow6-nightly-build": ["libmf6"]
+}
 
 
-def get_expected_files(repository):
+def get_expected_files(repository) -> Tuple[List[str], List[str]]:
     api_url = environ.get("GITHUB_API_URL")
     if not api_url:
         api_url = "https://api.github.com"
@@ -68,19 +74,26 @@ def get_expected_files(repository):
     metadata = next(iter([a for a in release['assets'] if a['name'] == 'code.json']), None)
 
     if metadata:
-        # TODO download code.json (once added to release assets)
-        exp = []
-        pass
+        # TODO check code.json once added to nightly build release
+        exes = []
+        libs = []
     else:
-        exp = expected_exes[repository]
+        exes = expected_exes[repository]
+        libs = expected_libs[repository]
 
     if system() == "Windows":
-        exp = [f"{exe}.exe" for exe in exp]
-    elif repository == "executables":
-        # TODO remove if PRMS is added to Windows distribution
-        exp += ["prms"]
+        exes = [f"{exe}.exe" for exe in exes]
+        libs = [f"{lib}.dll" for lib in libs]
+    elif system() == "Linux":
+        libs = [f"{lib}.so" for lib in libs]
+    else:
+        libs = [f"{lib}.dylib" for lib in libs]
 
-    return exp
+    if system() != "Windows" and repository == "executables":
+        # TODO remove if PRMS is added to Windows distribution
+        exes += ["prms"]
+
+    return exes, libs
 
 
 # check install location exists
@@ -89,13 +102,14 @@ print(f"Found install location: {path}")
 
 # check executables exist
 found = sorted([p.name for p in path.glob("*")])
-expected = sorted(get_expected_files(repo))
-assert set(found) >= set(expected), f"Executables missing:\n Found {set(found)}\n Expected {set(expected)}"
-print(f"Found all expected executables:")
+exp_exes, exp_libs = sorted(get_expected_files(repo))
+expected = exp_exes + exp_libs
+assert set(found) >= set(exp_exes), f"Executables/libraries missing:\n Found {set(found)}\n Expected {set(exp_exes)}"
+print(f"Found all expected executables/libraries:")
 pprint(expected)
 
 # check executables are on the PATH
-for exe in expected:
+for exe in exp_exes:
     assert which(exe), f"Executable {exe} not found on path"
 print(f"Verified executables are on system path")
 

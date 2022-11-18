@@ -75,7 +75,7 @@ jobs:
         run: |
           script_path="$RUNNER_TEMP/get_modflow.py"
 
-          if [ ${{ matrix.gm }} == "standalone" ] && [ ${{ steps.install-executables.outputs.cache-hit }} != "true" ]
+          if [ "${{ matrix.gm }}" == "standalone" ] && [ "${{ steps.install-executables.outputs.cache-hit }}" != "true" ]
           then
             if [ -f "$script_path" ]
             then
