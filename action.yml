@@ -57,7 +57,7 @@ runs:
       shell: bash
       run: |
         # get info for the executables repository's latest release
-        release_json=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN }}" "https://api.github.com/repos/MODFLOW-USGS/${{ inputs.repo }}/releases/latest") || echo "No release to check, skipping"
+        release_json=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/MODFLOW-USGS/${{ inputs.repo }}/releases/latest") || echo "No release to check, skipping"
 
         # get asset ID of the release's metadata file, if one exists
         get_asset_id="
@@ -72,7 +72,7 @@ runs:
 
         # asset_id is empty if metadata file asset wasn't found
         if [ ${#asset_id} -gt 0 ]; then
-           curl -H "Accept: application/octet-stream" -H "Authorization: Bearer $GH_TOKEN }}" "https://api.github.com/repos/MODFLOW-USGS/${{ inputs.repo }}/releases/assets/$asset_id" >> code.json
+           curl -H "Accept: application/octet-stream" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/MODFLOW-USGS/${{ inputs.repo }}/releases/assets/$asset_id" >> code.json
         else
           # give hashFiles an empty file to hash
           touch code.json
