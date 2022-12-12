@@ -12,6 +12,10 @@ inputs:
   github_token:
     description: GitHub API access token
     required: false
+  cache:
+    description: Whether to cache the installation
+    required: false
+    default: 'true'
 outputs:
   cache-hit:
     description: Whether the installation was restored from cache
@@ -72,29 +76,39 @@ runs:
 
         # asset_id is empty if metadata file asset wasn't found
         if [ ${#asset_id} -gt 0 ]; then
-           curl -H "Accept: application/octet-stream" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/MODFLOW-USGS/${{ inputs.repo }}/releases/assets/$asset_id" >> code.json
+          curl -H "Accept: application/octet-stream" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/MODFLOW-USGS/${{ inputs.repo }}/releases/assets/$asset_id" >> code.json
+          echo "Found code.json for ${{ inputs.repo }} distribution with contents:"
+          cat code.json
         else
           # give hashFiles an empty file to hash
+          echo "No code.json found for ${{ inputs.repo }} distribution, creating empty file"
           touch code.json
         fi
       env:
         GH_TOKEN: ${{ steps.set-github-token.outputs.token }}
 
+    - name: Get date
+      if: inputs.cache == 'true'
+      id: get-date
+      shell: bash
+      run: echo "date=$(/bin/date -u "+%Y%m%d")" >> "$GITHUB_OUTPUT"
+
     - name: Cache executables
+      if: inputs.cache == 'true'
       id: cache-modflow
       uses: actions/cache@v3
       with:
         path: ${{ env.MODFLOW_BIN_PATH }}
-        key: modflow-${{ runner.os }}-${{ inputs.repo }}-${{ hashFiles('code.json') }}
+        key: modflow-${{ runner.os }}-${{ inputs.repo }}-${{ hashFiles('code.json') }}-${{ steps.get-date.outputs.date }}
 
     - name: Install executables
-      if: steps.cache-modflow.outputs.cache-hit != 'true'
+      if: inputs.cache != 'true' || steps.cache-modflow.outputs.cache-hit != 'true'
       shell: bash
       run: |
         if command -v get-modflow &> /dev/null
         then
           echo "get-modflow command is available, running get-modflow"
-          get-modflow "$MODFLOW_BIN_PATH" --repo ${{ inputs.repo }}
+          get-modflow "$MODFLOW_BIN_PATH" --repo ${{ inputs.repo }} --force
         else
           echo "get-modflow command not available, downloading get_modflow.py"
           script_path="$RUNNER_TEMP/get_modflow.py"
