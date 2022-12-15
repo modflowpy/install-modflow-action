@@ -4,7 +4,7 @@
 [![CI](https://github.com/modflowpy/install-modflow-action/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/modflowpy/install-modflow-action/actions/workflows/ci.yml)
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
-An action to install MODFLOW 6 and related programs.
+An action to setup MODFLOW 6 and related programs.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -16,8 +16,11 @@ An action to install MODFLOW 6 and related programs.
   - [`github_token`](#github_token)
   - [`path`](#path)
   - [`repo`](#repo)
+  - [`cache`](#cache)
 - [Outputs](#outputs)
   - [`cache-hit`](#cache-hit)
+    - [Cache key](#cache-key)
+    - [`code.json`](#codejson)
 - [MODFLOW Resources](#modflow-resources)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -26,12 +29,16 @@ An action to install MODFLOW 6 and related programs.
 
 This action uses [FloPy's](https://github.com/modflowpy/flopy) [`get-modflow`](https://github.com/modflowpy/flopy/blob/develop/docs/get_modflow.md) utility to install MODFLOW 6 and a number of related binaries. The `get-modflow` utility is invoked directly if the `flopy` Python package is installed, otherwise it is retrieved as a standalone, dependency-free script compatible with Python >= 3.6.
 
-By default, the action will install the standard [executables distribution](https://github.com/MODFLOW-USGS/executables/releases), including MODFLOW 6 and 20+ related programs to the path. Independent MODFLOW 6 [releases](https://github.com/MODFLOW-USGS/modflow6/releases) or [nightly builds](https://github.com/MODFLOW-USGS/modflow6-nightly-build/releases) can also be selected, which only contain:
+By default, the action will install the standard MODFLOW [executables distribution](https://github.com/MODFLOW-USGS/executables/releases), which contains ~20 binaries. Independent MODFLOW 6 [releases](https://github.com/MODFLOW-USGS/modflow6/releases) or [nightly builds](https://github.com/MODFLOW-USGS/modflow6-nightly-build/releases) can also be selected, both of which only contain:
 
 - `mf6[.exe]`
 - `mf5to6[.exe]`
 - `zbud6[.exe]`
 - `libmf6.[so/dylib/dll]`
+
+The `executables` and `modflow6-nightly-build` distributions are small (less than 100 MB) and take only a few seconds to download and extract. The `modflow6` distribution is larger and takes a bit more time.
+
+The installation is cached by default, with the key changed daily. Daily key rotation allows the action automatically update versions when they become available, e.g. the nightly build &mdash; caching can be turned off by setting the `cache` input to `false`.
 
 ## Usage
 
@@ -74,6 +81,12 @@ The `repo` input allows selecting which MODFLOW 6 executable distribution to ins
 - `modflow6`
 - `modflow6-nightly-build`
 
+### `cache`
+
+The `cache` input is a boolean that controls whether the action caches the MODFLOW binaries. The default is `true`.
+
+**Note:** an [outstanding cache reservation bug in `actions/cache`](https://github.com/actions/cache/issues/144) can cause the cache to [fail to restore while simultaneously rejecting new saves](https://github.com/MODFLOW-USGS/modflow6/actions/runs/3624583228/jobs/6111766806#step:6:152). The [GitHub-endorsed workaround for this issue](https://github.com/actions/cache/issues/144#issuecomment-579323937) is currently to change keys, therefore this action rotates the cache key once daily. Rotating the key daily also allows the action to automatically update versions when they become available, e.g. so workflows can use the most recent nightly build.
+
 ## Outputs
 
 The action has the following outputs:
@@ -84,13 +97,45 @@ The action has the following outputs:
 
 The `cache-hit` output forwards the internal `actions/cache` output of the same name, and is `true` if a matching entry was found and `false` if not.
 
+#### Cache key
+
 Cache keys follow pattern:
 
 ```
-modflow-${{ runner.os }}-${{ inputs.repo }}-${{ hashFiles('code.json') }}
+modflow-${{ runner.os }}-${{ inputs.repo }}-${{ hashFiles('code.json') }}-${{ %Y%m%d }}
 ```
 
-`code.json` is a version metadata JSON file released with all three distributions. Separate caches are maintained for each combination of platform and distribution, and the cache is invalidated if versions change.
+#### `code.json`
+
+`code.json` is a version metadata JSON file released with the `executables` distribution, for instance:
+
+```
+{
+  "mf6": {
+    "current": true,
+    "dirname": "mf6.4.1_linux",
+    "double_switch": false,
+    "shared_object": false,
+    "srcdir": "src",
+    "standard_switch": true,
+    "url": "https://github.com/MODFLOW-USGS/modflow6/releases/download/6.4.1/mf6.4.1_linux.zip",
+    "url_download_asset_date": "12/09/2022",
+    "version": "6.4.1"
+  },
+  "libmf6": {
+    "current": true,
+    "dirname": "mf6.4.1_linux",
+    "double_switch": false,
+    "shared_object": true,
+    "srcdir": "srcbmi",
+    "standard_switch": true,
+    "url": "https://github.com/MODFLOW-USGS/modflow6/releases/download/6.4.1/mf6.4.1_linux.zip",
+    "url_download_asset_date": "12/09/2022",
+    "version": "6.4.1"
+  },
+  ...
+}
+```
 
 ## MODFLOW Resources
 

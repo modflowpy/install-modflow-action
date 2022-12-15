@@ -23,6 +23,7 @@ jobs:
         gm: [ flopy, standalone ]
         repo: [ executables, modflow6, modflow6-nightly-build ]
         path: [ absolute, relative, tilde, empty ]
+        cache: [ 'true', 'false' ]
     defaults:
       run:
         shell: bash
@@ -80,6 +81,7 @@ jobs:
         with:
           path: ${{ env.TEST_BINDIR }}
           repo: ${{ matrix.repo }}
+          cache: ${{ matrix.cache }}
 
       - name: Test installation
         run: |
