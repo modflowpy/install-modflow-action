@@ -58,6 +58,7 @@ runs:
         echo "token=$token" >> $GITHUB_OUTPUT
 
     - name: Check release
+      id: check-release
       shell: bash
       run: |
         # get info for the executables repository's latest release
@@ -73,16 +74,18 @@ runs:
         print(dict(metadata)['id'] if metadata else '')
         "
         asset_id=$(echo "$release_json" | python3 -c "$get_asset_id") || echo "No release to check, skipping"
+        code_json="$RUNNER_TEMP/code.json"
+        echo "code_json=$code_json" >> $GITHUB_OUTPUT
 
-        # asset_id is empty if metadata file asset wasn't found
+        # asset_id is empty if code.json asset wasn't found on the release
         if [ ${#asset_id} -gt 0 ]; then
-          curl -H "Accept: application/octet-stream" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/MODFLOW-USGS/${{ inputs.repo }}/releases/assets/$asset_id" >> code.json
-          echo "Found code.json for ${{ inputs.repo }} distribution with contents:"
-          cat code.json
+          curl -H "Accept: application/octet-stream" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/MODFLOW-USGS/${{ inputs.repo }}/releases/assets/$asset_id" >> $code_json
+          echo "Found code.json for distribution '${{ inputs.repo }}' with contents:"
+          cat $code_json
         else
-          # give hashFiles an empty file to hash
-          echo "No code.json found for ${{ inputs.repo }} distribution, creating empty file"
-          touch code.json
+          # give hashFiles an empty file
+          echo "No code.json found for distribution '${{ inputs.repo }}', creating empty file"
+          touch $code_json
         fi
       env:
         GH_TOKEN: ${{ steps.set-github-token.outputs.token }}
@@ -99,7 +102,7 @@ runs:
       uses: actions/cache@v3
       with:
         path: ${{ env.MODFLOW_BIN_PATH }}
-        key: modflow-${{ runner.os }}-${{ inputs.repo }}-${{ hashFiles('code.json') }}-${{ steps.get-date.outputs.date }}
+        key: modflow-${{ runner.os }}-${{ inputs.repo }}-${{ hashFiles(steps.check-release.outputs.code_json) }}-${{ steps.get-date.outputs.date }}
 
     - name: Install executables
       if: inputs.cache != 'true' || steps.cache-modflow.outputs.cache-hit != 'true'
