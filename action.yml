@@ -65,23 +65,23 @@ runs:
         release_json=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/MODFLOW-USGS/${{ inputs.repo }}/releases/latest") || echo "No release to check, skipping"
 
         # get asset ID of the release's metadata file, if one exists
-        get_asset_id="
+        get_download_url="
         import json
         import sys
         pattern = 'code.json'
         release = json.load(sys.stdin, strict=False)
         metadata = next(iter([a for a in release['assets'] if a['name'] == pattern]), None)
-        print(dict(metadata)['id'] if metadata else '')
+        print(dict(metadata)['browser_download_url'] if metadata else '')
         "
-        asset_id=$(echo "$release_json" | python3 -c "$get_asset_id") || echo "No release to check, skipping"
+        download_url=$(echo "$release_json" | python3 -c "$get_download_url") || echo "No release to check, skipping"
         code_json="$RUNNER_TEMP/code.json"
-        echo "Using temporary code.json path: $code_json"
         echo "code_json=$code_json" >> $GITHUB_OUTPUT
 
         # asset_id is empty if code.json asset wasn't found on the release
-        if [ ${#asset_id} -gt 0 ]; then
-          curl -H "Accept: application/octet-stream" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/MODFLOW-USGS/${{ inputs.repo }}/releases/assets/$asset_id" >> "$code_json"
-          echo "Found code.json (asset ID '$asset_id') for distribution '${{ inputs.repo }}' with contents:"
+        if [[ -n "$download_url" ]]; then
+          echo "Downloading code.json from $download_url to $code_json"
+          curl -L -H "Authorization: Bearer $GH_TOKEN" "$download_url" >> "$code_json"
+          echo "Found code.json for distribution '${{ inputs.repo }}' with contents:"
           cat "$code_json"
         else
           # give hashFiles an empty file
