@@ -75,17 +75,18 @@ runs:
         "
         asset_id=$(echo "$release_json" | python3 -c "$get_asset_id") || echo "No release to check, skipping"
         code_json="$RUNNER_TEMP/code.json"
+        echo "Using temporary code.json path: $code_json"
         echo "code_json=$code_json" >> $GITHUB_OUTPUT
 
         # asset_id is empty if code.json asset wasn't found on the release
         if [ ${#asset_id} -gt 0 ]; then
-          curl -H "Accept: application/octet-stream" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/MODFLOW-USGS/${{ inputs.repo }}/releases/assets/$asset_id" >> $code_json
-          echo "Found code.json for distribution '${{ inputs.repo }}' with contents:"
-          cat $code_json
+          curl -H "Accept: application/octet-stream" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/MODFLOW-USGS/${{ inputs.repo }}/releases/assets/$asset_id" >> "$code_json"
+          echo "Found code.json (asset ID '$asset_id') for distribution '${{ inputs.repo }}' with contents:"
+          cat "$code_json"
         else
           # give hashFiles an empty file
           echo "No code.json found for distribution '${{ inputs.repo }}', creating empty file"
-          touch $code_json
+          touch "$code_json"
         fi
       env:
         GH_TOKEN: ${{ steps.set-github-token.outputs.token }}
