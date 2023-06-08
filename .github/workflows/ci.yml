@@ -102,3 +102,113 @@ jobs:
           python test/test.py "$TEST_BINDIR" "${{ matrix.repo }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+  test_subset:
+    name: Test subset input
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        subset: [ '', 'mf6,mf2005' ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: pip install -r test/requirements.txt
+
+      - name: Install FloPy
+        run: pip install git+https://github.com/modflowpy/flopy.git
+
+      - name: Set bin path
+        if: runner.os != 'Windows'
+        run: |
+          bindir=""
+          echo "TEST_BINDIR=$bindir" >> $GITHUB_ENV
+
+      - name: Set bin path (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $bindir = ""
+          echo "TEST_BINDIR=$bindir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install executables
+        id: install-executables
+        uses: ./
+        with:
+          path: ${{ env.TEST_BINDIR }}
+          subset: ${{ matrix.subset }}
+
+      - name: Test installation
+        run: |
+          script_path="$RUNNER_TEMP/get_modflow.py"
+          python test/test.py "$TEST_BINDIR" "executables" "${{ matrix.subset }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+  test_tag:
+    name: Test release tag input
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        tag: [ 'latest', '13.0' ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: pip install -r test/requirements.txt
+
+      - name: Install FloPy
+        run: pip install git+https://github.com/modflowpy/flopy.git
+
+      - name: Set bin path
+        if: runner.os != 'Windows'
+        run: |
+          bindir=""
+          echo "TEST_BINDIR=$bindir" >> $GITHUB_ENV
+
+      - name: Set bin path (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $bindir = ""
+          echo "TEST_BINDIR=$bindir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install executables
+        id: install-executables
+        uses: ./
+        with:
+          path: ${{ env.TEST_BINDIR }}
+          tag: ${{ matrix.tag }}
+
+      - name: Test installation
+        run: |
+          script_path="$RUNNER_TEMP/get_modflow.py"
+          python test/test.py "$TEST_BINDIR" "executables"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

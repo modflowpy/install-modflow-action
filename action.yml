@@ -1,6 +1,9 @@
 name: Install MODFLOW
 description: Install & cache MODFLOW 6 and related programs.
 inputs:
+  github_token:
+    description: GitHub API access token
+    required: false
   path:
     description: Path to install location (e.g. a bin directory)
     required: false
@@ -9,9 +12,14 @@ inputs:
     description: Repository to install executables from ('executables', 'modflow6', or 'modflow6-nightly-build')
     required: false
     default: executables
-  github_token:
-    description: GitHub API access token
+  tag:
+    description: Tag of the release version to install
     required: false
+    default: 'latest'
+  subset:
+    description: Subset of binaries to install
+    required: False
+    default: ''
   cache:
     description: Whether to cache the installation
     required: false
@@ -90,6 +98,15 @@ runs:
         fi
       env:
         GH_TOKEN: ${{ steps.set-github-token.outputs.token }}
+    
+    - name: Replace commas in subset input
+      id: commas
+      if: inputs.subset != ''
+      shell: bash
+      run: |
+        subset="${{ inputs.subset }}"
+        subset=${subset//,/_}
+        echo "subset=$subset" >> "$GITHUB_OUTPUT"
 
     - name: Get date
       if: inputs.cache == 'true'
@@ -103,7 +120,7 @@ runs:
       uses: actions/cache@v3
       with:
         path: ${{ env.MODFLOW_BIN_PATH }}
-        key: modflow-${{ runner.os }}-${{ inputs.repo }}-${{ hashFiles(steps.check-release.outputs.code_json) }}-${{ steps.get-date.outputs.date }}
+        key: modflow-${{ runner.os }}-${{ inputs.repo }}-${{ steps.commas.outputs.subset }}-${{ hashFiles(steps.check-release.outputs.code_json) }}-${{ steps.get-date.outputs.date }}
 
     - name: Install executables
       if: inputs.cache != 'true' || steps.cache-modflow.outputs.cache-hit != 'true'
@@ -112,6 +129,11 @@ runs:
         if command -v get-modflow &> /dev/null
         then
           echo "get-modflow command is available, running get-modflow"
+          if [ "${{ inputs.subset }}" == "" ]; then
+            get-modflow "$MODFLOW_BIN_PATH" --repo ${{ inputs.repo }} --release-id "${{ inputs.tag }}" --force
+          else
+            get-modflow "$MODFLOW_BIN_PATH" --repo ${{ inputs.repo }} --release-id "${{ inputs.tag }}" --subset "${{ inputs.subset }}" --force
+          fi
           get-modflow "$MODFLOW_BIN_PATH" --repo ${{ inputs.repo }} --force
         else
           echo "get-modflow command not available, downloading get_modflow.py"
@@ -119,7 +141,11 @@ runs:
           curl https://raw.githubusercontent.com/modflowpy/flopy/develop/flopy/utils/get_modflow.py -o "$script_path"
 
           echo "running get_modflow.py"
-          python3 $script_path "$MODFLOW_BIN_PATH" --repo "${{ inputs.repo }}"
+          if [ "${{ inputs.subset }}" == "" ]; then
+            python3 $script_path "$MODFLOW_BIN_PATH" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}"
+          else
+            python3 $script_path "$MODFLOW_BIN_PATH" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}" --subset "${{ inputs.subset }}"
+          fi
         fi
       env:
         GITHUB_TOKEN: ${{ steps.set-github-token.outputs.token }}

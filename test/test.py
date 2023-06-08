@@ -10,7 +10,8 @@ import sys
 from typing import List, Tuple
 
 path = Path(sys.argv[1] if sys.argv[1] else "~/.local/bin/modflow").expanduser().absolute()
-repo = sys.argv[2] if (len(sys.argv) > 1 and sys.argv[2]) else "executables"
+repo = sys.argv[2] if (len(sys.argv) > 2 and sys.argv[2]) else "executables"
+subset = sys.argv[3] if (len(sys.argv) > 3 and sys.argv[3]) else None
 
 print(f"Path: {path}")
 print(f"Repo: {repo}")
@@ -57,6 +58,11 @@ expected_libs = {
     "modflow6": ["libmf6"],
     "modflow6-nightly-build": ["libmf6"]
 }
+
+# apply subset filter, if provided
+if subset:
+    expected_exes = {k: [vv for vv in v if vv in subset] for k, v in expected_exes.items()}
+    expected_libs = {k: [vv for vv in v if vv in subset] for k, v in expected_libs.items()}
 
 
 # TODO: can flopy also store code.json here (or reproduce it in get_modflow.json)?
