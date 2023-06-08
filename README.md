@@ -9,6 +9,7 @@ An action to setup MODFLOW 6 and related programs.
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+
 - [Overview](#overview)
 - [Usage](#usage)
 - [Environment variables](#environment-variables)
@@ -16,6 +17,8 @@ An action to setup MODFLOW 6 and related programs.
   - [`github_token`](#github_token)
   - [`path`](#path)
   - [`repo`](#repo)
+  - [`tag`](#tag)
+  - [`subset`](#subset)
   - [`cache`](#cache)
 - [Outputs](#outputs)
   - [`cache-hit`](#cache-hit)
@@ -62,6 +65,9 @@ The action accepts the following optional inputs:
 - `github_token`
 - `path`
 - `repo`
+- `tag`
+- `subset`
+- `cache`
 
 ### `github_token`
 
@@ -80,6 +86,18 @@ The `repo` input allows selecting which MODFLOW 6 executable distribution to ins
 - `executables` (default)
 - `modflow6`
 - `modflow6-nightly-build`
+
+### `tag`
+
+The `tag` input allows selecting a release by tag name. The default is `latest`.
+
+For the `modflow6` distribution, releases are [tagged by semantic version number](https://github.com/MODFLOW-USGS/modflow6/tags). For the `modflow6-nightly-build` distribution, releases are [tagged by date](https://github.com/MODFLOW-USGS/modflow6-nightly-build/tags), in format `%Y%m%d`, e.g. `20230607`. For the `executables` distribution, releases are [tagged by integer version number with trailing ".0"](https://github.com/MODFLOW-USGS/executables/tags).
+
+### `subset`
+
+The `subset` input allows selecting which binaries to install. One or more binaries may be selected with a comma-separated string.
+
+If this input is not provided, or if its value is an empty string, all binaries in the selected distribution are installed. This is the default behavior.
 
 ### `cache`
 
