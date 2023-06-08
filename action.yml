@@ -134,7 +134,6 @@ runs:
           else
             get-modflow "$MODFLOW_BIN_PATH" --repo ${{ inputs.repo }} --release-id "${{ inputs.tag }}" --subset "${{ inputs.subset }}" --force
           fi
-          get-modflow "$MODFLOW_BIN_PATH" --repo ${{ inputs.repo }} --force
         else
           echo "get-modflow command not available, downloading get_modflow.py"
           script_path="$RUNNER_TEMP/get_modflow.py"
