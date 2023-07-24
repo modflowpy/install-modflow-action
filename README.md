@@ -22,8 +22,6 @@ An action to setup MODFLOW 6 and related programs.
   - [`cache`](#cache)
 - [Outputs](#outputs)
   - [`cache-hit`](#cache-hit)
-    - [Cache key](#cache-key)
-    - [`code.json`](#codejson)
 - [MODFLOW Resources](#modflow-resources)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -115,15 +113,11 @@ The action has the following outputs:
 
 The `cache-hit` output forwards the internal `actions/cache` output of the same name, and is `true` if a matching entry was found and `false` if not.
 
-#### Cache key
-
 Cache keys follow pattern:
 
 ```
 modflow-${{ runner.os }}-${{ inputs.repo }}-${{ hashFiles('code.json') }}-${{ %Y%m%d }}
 ```
-
-#### `code.json`
 
 `code.json` is a version metadata JSON file released with the `executables` distribution, for instance:
 
