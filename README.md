@@ -122,11 +122,22 @@ The action has the following outputs:
 
 The `cache-hit` output forwards the internal `actions/cache` output of the same name, and is `true` if a matching entry was found and `false` if not.
 
-Cache keys follow pattern:
+Cache keys are composed from:
+
+- runner OS
+- repository owner
+- repository name
+- date
+- hash of code.json
+- subset of binaries to install (if specified)
+
+With format:
 
 ```
-modflow-${{ runner.os }}-${{ inputs.repo }}-${{ hashFiles('code.json') }}-${{ %Y%m%d }}
+modflow-${{ runner.os }}-${{ inputs.owner }}-${{ inputs.repo }}-${{ %Y%m%d }}-${{ hashFiles('code.json') }}
 ```
+
+If the `subset` input is provided, an additional clause `-${{ inputs.subset }}` is appended to the key.
 
 `code.json` is a version metadata JSON file released with the `executables` distribution, for instance:
 

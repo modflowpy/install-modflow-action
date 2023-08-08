@@ -104,20 +104,24 @@ runs:
       env:
         GH_TOKEN: ${{ steps.set-github-token.outputs.token }}
     
-    - name: Replace commas in subset input
-      id: commas
-      if: inputs.subset != ''
-      shell: bash
-      run: |
-        subset="${{ inputs.subset }}"
-        subset=${subset//,/_}
-        echo "subset=$subset" >> "$GITHUB_OUTPUT"
-
     - name: Get date
       if: inputs.cache == 'true'
       id: get-date
       shell: bash
       run: echo "date=$(/bin/date -u "+%Y%m%d")" >> "$GITHUB_OUTPUT"
+
+    
+    - name: Compose cache key
+      id: cache-key
+      if: inputs.cache == 'true'
+      run: |
+        key="modflow-${{ runner.os }}-${{ inputs.owner }}-${{ inputs.repo }}-${{ steps.get-date.outputs.date }}-${{ hashFiles(steps.check-release.outputs.code_json) }}"
+        if [[ "${{ inputs.subset }}" != "" ]]; then
+          subset="${{ inputs.subset }}"
+          subset=${subset//,/-} # replace commas with dashes
+          key="$key-$subset"
+        fi
+        echo "key=$key" >> "$GITHUB_OUTPUT"
 
     - name: Cache executables
       if: inputs.cache == 'true'
@@ -125,7 +129,7 @@ runs:
       uses: actions/cache@v3
       with:
         path: ${{ env.MODFLOW_BIN_PATH }}
-        key: modflow-${{ runner.os }}-${{ inputs.repo }}-${{ steps.commas.outputs.subset }}-${{ hashFiles(steps.check-release.outputs.code_json) }}-${{ steps.get-date.outputs.date }}
+        key: ${{ steps.cache-key.outputs.key }}
 
     - name: Install executables
       if: inputs.cache != 'true' || steps.cache-modflow.outputs.cache-hit != 'true'
