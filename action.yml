@@ -110,10 +110,10 @@ runs:
       shell: bash
       run: echo "date=$(/bin/date -u "+%Y%m%d")" >> "$GITHUB_OUTPUT"
 
-    
     - name: Compose cache key
-      id: cache-key
       if: inputs.cache == 'true'
+      id: cache-key
+      shell: bash
       run: |
         key="modflow-${{ runner.os }}-${{ inputs.owner }}-${{ inputs.repo }}-${{ steps.get-date.outputs.date }}-${{ hashFiles(steps.check-release.outputs.code_json) }}"
         if [[ "${{ inputs.subset }}" != "" ]]; then
@@ -139,9 +139,9 @@ runs:
         then
           echo "get-modflow command is available, running get-modflow"
           if [ "${{ inputs.subset }}" == "" ]; then
-            get-modflow "$MODFLOW_BIN_PATH" --repo ${{ inputs.repo }} --release-id "${{ inputs.tag }}" --force
+            get-modflow "$MODFLOW_BIN_PATH" --owner "${{ inputs.owner }}" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}" --force
           else
-            get-modflow "$MODFLOW_BIN_PATH" --repo ${{ inputs.repo }} --release-id "${{ inputs.tag }}" --subset "${{ inputs.subset }}" --force
+            get-modflow "$MODFLOW_BIN_PATH" --owner "${{ inputs.owner }}" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}" --subset "${{ inputs.subset }}" --force
           fi
         else
           echo "get-modflow command not available, downloading get_modflow.py"
@@ -150,9 +150,9 @@ runs:
 
           echo "running get_modflow.py"
           if [ "${{ inputs.subset }}" == "" ]; then
-            python3 $script_path "$MODFLOW_BIN_PATH" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}"
+            python3 $script_path "$MODFLOW_BIN_PATH" --owner "${{ inputs.owner }}" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}"
           else
-            python3 $script_path "$MODFLOW_BIN_PATH" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}" --subset "${{ inputs.subset }}"
+            python3 $script_path "$MODFLOW_BIN_PATH" --owner "${{ inputs.owner }}" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}" --subset "${{ inputs.subset }}"
           fi
         fi
       env:
