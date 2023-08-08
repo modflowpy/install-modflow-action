@@ -127,47 +127,17 @@ Cache keys are composed from:
 - runner OS
 - repository owner
 - repository name
+- release tag
 - date
-- hash of code.json
 - subset of binaries to install (if specified)
 
 With format:
 
 ```
-modflow-${{ runner.os }}-${{ inputs.owner }}-${{ inputs.repo }}-${{ %Y%m%d }}-${{ hashFiles('code.json') }}
+modflow-${{ runner.os }}-${{ inputs.owner }}-${{ inputs.repo }}-${{ inputs.tag }}-${{ %Y%m%d }}
 ```
 
 If the `subset` input is provided, an additional clause `-${{ inputs.subset }}` is appended to the key.
-
-`code.json` is a version metadata JSON file released with the `executables` distribution, for instance:
-
-```
-{
-  "mf6": {
-    "current": true,
-    "dirname": "mf6.4.1_linux",
-    "double_switch": false,
-    "shared_object": false,
-    "srcdir": "src",
-    "standard_switch": true,
-    "url": "https://github.com/MODFLOW-USGS/modflow6/releases/download/6.4.1/mf6.4.1_linux.zip",
-    "url_download_asset_date": "12/09/2022",
-    "version": "6.4.1"
-  },
-  "libmf6": {
-    "current": true,
-    "dirname": "mf6.4.1_linux",
-    "double_switch": false,
-    "shared_object": true,
-    "srcdir": "srcbmi",
-    "standard_switch": true,
-    "url": "https://github.com/MODFLOW-USGS/modflow6/releases/download/6.4.1/mf6.4.1_linux.zip",
-    "url_download_asset_date": "12/09/2022",
-    "version": "6.4.1"
-  },
-  ...
-}
-```
 
 ## MODFLOW Resources
 
