@@ -1,6 +1,10 @@
 name: Install MODFLOW
 description: Install & cache MODFLOW 6 and related programs.
 inputs:
+  cache:
+    description: Whether to cache the installation
+    required: false
+    default: 'true'
   github_token:
     description: GitHub API access token
     required: false
@@ -12,18 +16,15 @@ inputs:
     description: Repository to install executables from ('executables', 'modflow6', or 'modflow6-nightly-build')
     required: false
     default: executables
-  tag:
-    description: Tag of the release version to install
-    required: false
-    default: 'latest'
   subset:
     description: Subset of binaries to install
     required: False
     default: ''
-  cache:
-    description: Whether to cache the installation
+  tag:
+    description: Tag of the release version to install
     required: false
-    default: 'true'
+    default: 'latest'
+  
 outputs:
   cache-hit:
     description: Whether the installation was restored from cache
