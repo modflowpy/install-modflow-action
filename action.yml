@@ -8,6 +8,10 @@ inputs:
   github_token:
     description: GitHub API access token
     required: false
+  owner:
+    description: GitHub username or organization name
+    required: false
+    default: 'MODFLOW-USGS'
   path:
     description: Path to install location (e.g. a bin directory)
     required: false
@@ -71,7 +75,7 @@ runs:
       shell: bash
       run: |
         # get info for the executables repository's latest release
-        release_json=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/MODFLOW-USGS/${{ inputs.repo }}/releases/latest") || echo "No release to check, skipping"
+        release_json=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/${{ inputs.owner }}/${{ inputs.repo }}/releases/latest") || echo "No release to check, skipping"
 
         # get asset ID of the release's metadata file, if one exists
         get_download_url="

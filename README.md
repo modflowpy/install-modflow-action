@@ -15,6 +15,7 @@ An action to setup MODFLOW 6 and related programs.
 - [Environment variables](#environment-variables)
 - [Inputs](#inputs)
   - [`github_token`](#github_token)
+  - [`owner`](#owner)
   - [`path`](#path)
   - [`repo`](#repo)
   - [`tag`](#tag)
@@ -43,7 +44,7 @@ The installation is cached by default, with the key changed daily. Daily key rot
 
 ## Usage
 
-To use this action, add a step like the following to your workflow:
+To install the latest version of MODFLOW 6 and ~20 related programs from the [MODFLOW-USGS/executables](https://github.com/MODFLOW-USGS/executables) distribution, add a step like the following to your workflow:
 
 ```yaml
 - name: Install MODFLOW 6
@@ -60,16 +61,24 @@ This action sets the following environment variables:
 
 The action accepts the following optional inputs:
 
+- `cache`
 - `github_token`
+- `owner`
 - `path`
 - `repo`
-- `tag`
 - `subset`
-- `cache`
+- `tag`
+
 
 ### `github_token`
 
 By default, the action uses the [automatically provided](https://docs.github.com/en/actions/security-guides/automatic-token-authentication#about-the-github_token-secret) `GITHUB_TOKEN` secret, but an access token may be explicitly provided as well.
+
+### `owner`
+
+The `owner` input is the name of the repository's owner (username or organization).
+
+This input can be used to install from releases on forks of MODFLOW 6, provided release assets use the same [operating system tag convention](https://modflow-devtools.readthedocs.io/en/latest/md/ostags.html#tag-specification) used by the official repositories.
 
 ### `path`
 
