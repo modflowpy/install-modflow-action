@@ -1,9 +1,17 @@
 name: Install MODFLOW
 description: Install & cache MODFLOW 6 and related programs.
 inputs:
+  cache:
+    description: Whether to cache the installation
+    required: false
+    default: 'true'
   github_token:
     description: GitHub API access token
     required: false
+  owner:
+    description: GitHub username or organization name
+    required: false
+    default: 'MODFLOW-USGS'
   path:
     description: Path to install location (e.g. a bin directory)
     required: false
@@ -12,18 +20,15 @@ inputs:
     description: Repository to install executables from ('executables', 'modflow6', or 'modflow6-nightly-build')
     required: false
     default: executables
-  tag:
-    description: Tag of the release version to install
-    required: false
-    default: 'latest'
   subset:
     description: Subset of binaries to install
     required: False
     default: ''
-  cache:
-    description: Whether to cache the installation
+  tag:
+    description: Tag of the release version to install
     required: false
-    default: 'true'
+    default: 'latest'
+  
 outputs:
   cache-hit:
     description: Whether the installation was restored from cache
@@ -70,7 +75,7 @@ runs:
       shell: bash
       run: |
         # get info for the executables repository's latest release
-        release_json=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/MODFLOW-USGS/${{ inputs.repo }}/releases/latest") || echo "No release to check, skipping"
+        release_json=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/${{ inputs.owner }}/${{ inputs.repo }}/releases/latest") || echo "No release to check, skipping"
 
         # get asset ID of the release's metadata file, if one exists
         get_download_url="
@@ -99,20 +104,24 @@ runs:
       env:
         GH_TOKEN: ${{ steps.set-github-token.outputs.token }}
     
-    - name: Replace commas in subset input
-      id: commas
-      if: inputs.subset != ''
-      shell: bash
-      run: |
-        subset="${{ inputs.subset }}"
-        subset=${subset//,/_}
-        echo "subset=$subset" >> "$GITHUB_OUTPUT"
-
     - name: Get date
       if: inputs.cache == 'true'
       id: get-date
       shell: bash
       run: echo "date=$(/bin/date -u "+%Y%m%d")" >> "$GITHUB_OUTPUT"
+
+    - name: Compose cache key
+      if: inputs.cache == 'true'
+      id: cache-key
+      shell: bash
+      run: |
+        key="modflow-${{ runner.os }}-${{ inputs.owner }}-${{ inputs.repo }}-${{ steps.get-date.outputs.date }}-${{ hashFiles(steps.check-release.outputs.code_json) }}"
+        if [[ "${{ inputs.subset }}" != "" ]]; then
+          subset="${{ inputs.subset }}"
+          subset=${subset//,/-} # replace commas with dashes
+          key="$key-$subset"
+        fi
+        echo "key=$key" >> "$GITHUB_OUTPUT"
 
     - name: Cache executables
       if: inputs.cache == 'true'
@@ -120,7 +129,7 @@ runs:
       uses: actions/cache@v3
       with:
         path: ${{ env.MODFLOW_BIN_PATH }}
-        key: modflow-${{ runner.os }}-${{ inputs.repo }}-${{ steps.commas.outputs.subset }}-${{ hashFiles(steps.check-release.outputs.code_json) }}-${{ steps.get-date.outputs.date }}
+        key: ${{ steps.cache-key.outputs.key }}
 
     - name: Install executables
       if: inputs.cache != 'true' || steps.cache-modflow.outputs.cache-hit != 'true'
@@ -130,9 +139,9 @@ runs:
         then
           echo "get-modflow command is available, running get-modflow"
           if [ "${{ inputs.subset }}" == "" ]; then
-            get-modflow "$MODFLOW_BIN_PATH" --repo ${{ inputs.repo }} --release-id "${{ inputs.tag }}" --force
+            get-modflow "$MODFLOW_BIN_PATH" --owner "${{ inputs.owner }}" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}" --force
           else
-            get-modflow "$MODFLOW_BIN_PATH" --repo ${{ inputs.repo }} --release-id "${{ inputs.tag }}" --subset "${{ inputs.subset }}" --force
+            get-modflow "$MODFLOW_BIN_PATH" --owner "${{ inputs.owner }}" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}" --subset "${{ inputs.subset }}" --force
           fi
         else
           echo "get-modflow command not available, downloading get_modflow.py"
@@ -141,9 +150,9 @@ runs:
 
           echo "running get_modflow.py"
           if [ "${{ inputs.subset }}" == "" ]; then
-            python3 $script_path "$MODFLOW_BIN_PATH" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}"
+            python3 $script_path "$MODFLOW_BIN_PATH" --owner "${{ inputs.owner }}" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}"
           else
-            python3 $script_path "$MODFLOW_BIN_PATH" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}" --subset "${{ inputs.subset }}"
+            python3 $script_path "$MODFLOW_BIN_PATH" --owner "${{ inputs.owner }}" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}" --subset "${{ inputs.subset }}"
           fi
         fi
       env:
