@@ -126,7 +126,7 @@ runs:
     - name: Cache executables
       if: inputs.cache == 'true'
       id: cache-modflow
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ env.MODFLOW_BIN_PATH }}
         key: ${{ steps.cache-key.outputs.key }}
