@@ -28,6 +28,10 @@ inputs:
     description: Tag of the release version to install
     required: false
     default: 'latest'
+  ostag:
+    description: Operating system tag; default is to automatically choose.
+    required: false
+    default: ''
   
 outputs:
   cache-hit:
@@ -121,6 +125,10 @@ runs:
           subset=${subset//,/-} # replace commas with dashes
           key="$key-$subset"
         fi
+        if [[ "${{ inputs.ostag }}" != "" ]]; then
+          ostag="${{ inputs.ostag }}"
+          key="$key-$ostag"
+        fi
         echo "key=$key" >> "$GITHUB_OUTPUT"
 
     - name: Cache executables
@@ -135,26 +143,29 @@ runs:
       if: inputs.cache != 'true' || steps.cache-modflow.outputs.cache-hit != 'true'
       shell: bash
       run: |
+        # compose arguments
+        args='--owner "${{ inputs.owner }}" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}" --force'
+        if [[ "${{ inputs.subset }}" != "" ]]; then
+          args='$args --subset "${{ inputs.subset }}"'
+        fi
+        if [[ "${{ inputs.ostag}}" != "" ]]; then
+          args='$args --ostag "${{ inputs.ostag }}"'
+        fi
+
+        # download the installation script if necessary
         if command -v get-modflow &> /dev/null
         then
-          echo "get-modflow command is available, running get-modflow"
-          if [ "${{ inputs.subset }}" == "" ]; then
-            get-modflow "$MODFLOW_BIN_PATH" --owner "${{ inputs.owner }}" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}" --force
-          else
-            get-modflow "$MODFLOW_BIN_PATH" --owner "${{ inputs.owner }}" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}" --subset "${{ inputs.subset }}" --force
-          fi
+          echo "get-modflow command is available"
+          cmd="get-modflow"
         else
-          echo "get-modflow command not available, downloading get_modflow.py"
+          echo "get-modflow command not available, downloading install script"
           script_path="$RUNNER_TEMP/get_modflow.py"
           curl https://raw.githubusercontent.com/modflowpy/flopy/develop/flopy/utils/get_modflow.py -o "$script_path"
-
-          echo "running get_modflow.py"
-          if [ "${{ inputs.subset }}" == "" ]; then
-            python3 $script_path "$MODFLOW_BIN_PATH" --owner "${{ inputs.owner }}" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}"
-          else
-            python3 $script_path "$MODFLOW_BIN_PATH" --owner "${{ inputs.owner }}" --repo "${{ inputs.repo }}" --release-id "${{ inputs.tag }}" --subset "${{ inputs.subset }}"
-          fi
+          cmd="python3 $script_path"
         fi
+
+        echo "starting installation"
+        $cmd $MODFLOW_BIN_PATH $args
       env:
         GITHUB_TOKEN: ${{ steps.set-github-token.outputs.token }}
 
