@@ -167,7 +167,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
-        tag: [ 'latest', '13.0' ]
+        tag: [ 'latest', '19.0' ]
     defaults:
       run:
         shell: bash
@@ -220,7 +220,7 @@ jobs:
         uses: ./
         with:
           path: ${{ env.TEST_BINDIR}}
-          tag: ${{ matrix.tag }}
+          tag: latest
           ostag: mac
 
       - name: Test ostag (macOS)
