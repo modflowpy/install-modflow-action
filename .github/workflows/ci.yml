@@ -214,3 +214,19 @@ jobs:
           python test/test.py "$TEST_BINDIR" "executables"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install with ostag (macOS)
+        if: runner.os == 'macOS'
+        uses: ./
+        with:
+          path: ${{ env.TEST_BINDIR}}
+          tag: ${{ matrix.tag }}
+          ostag: mac
+
+      - name: Test ostag (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          script_path="$RUNNER_TEMP/get_modflow.py"
+          python test/test.py "$TEST_BINDIR" "executables"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
