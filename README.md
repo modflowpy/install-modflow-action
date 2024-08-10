@@ -9,7 +9,6 @@ An action to setup MODFLOW 6 and related programs.
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-
 - [Overview](#overview)
 - [Usage](#usage)
 - [Environment variables](#environment-variables)
@@ -21,6 +20,7 @@ An action to setup MODFLOW 6 and related programs.
   - [`tag`](#tag)
   - [`subset`](#subset)
   - [`cache`](#cache)
+  - [`ostag`](#ostag)
 - [Outputs](#outputs)
   - [`cache-hit`](#cache-hit)
 - [MODFLOW Resources](#modflow-resources)
@@ -111,6 +111,10 @@ If this input is not provided, or if its value is an empty string, all binaries 
 The `cache` input is a boolean that controls whether the action caches the MODFLOW binaries. The default is `true`.
 
 **Note:** an [outstanding cache reservation bug in `actions/cache`](https://github.com/actions/cache/issues/144) can cause the cache to [fail to restore while simultaneously rejecting new saves](https://github.com/MODFLOW-USGS/modflow6/actions/runs/3624583228/jobs/6111766806#step:6:152). The [GitHub-endorsed workaround for this issue](https://github.com/actions/cache/issues/144#issuecomment-579323937) is currently to change keys, therefore this action rotates the cache key once daily. Rotating the key daily also allows the action to automatically update versions when they become available, e.g. so workflows can use the most recent nightly build.
+
+### `ostag`
+
+The `ostag` input allows selecting a release by operating system. By default, this is the system the action is running on. Typically one will not need to override this default &mdash; one reason to do so is to select an Intel macOS distribution on an ARM macOS runner.
 
 ## Outputs
 
