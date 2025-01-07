@@ -119,7 +119,7 @@ runs:
       id: cache-key
       shell: bash
       run: |
-        key="modflow-${{ runner.os }}-${{ inputs.owner }}-${{ inputs.repo }}-${{ inputs.tag }}-${{ steps.get-date.outputs.date }}"
+        key="modflow-${{ runner.os }}-${{ runner.arch }}-${{ inputs.owner }}-${{ inputs.repo }}-${{ inputs.tag }}-${{ steps.get-date.outputs.date }}"
         if [[ "${{ inputs.subset }}" != "" ]]; then
           subset="${{ inputs.subset }}"
           subset=${subset//,/-} # replace commas with dashes
