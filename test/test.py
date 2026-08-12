@@ -31,7 +31,7 @@ expected_exes = {
         'crt',
         'mt3dms',
         'mf2005dbl',
-        'zonbud3',
+        'zonbud',
         'gridgen',
         'mflgrdbl',
         'mfnwt',

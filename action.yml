@@ -152,6 +152,15 @@ runs:
           args="$args --ostag ${{ inputs.ostag }}"
         fi
 
+        # work around broken/incomplete local CA trust stores on some runners by pointing
+        # Python's default SSL context at certifi's CA bundle, regardless of which install
+        # path below ends up running
+        python3 -m pip install --quiet --disable-pip-version-check certifi || true
+        cert_file="$(python3 -m certifi 2>/dev/null || true)"
+        if [[ -n "$cert_file" ]]; then
+          export SSL_CERT_FILE="$cert_file"
+        fi
+
         # download the installation script if necessary
         if command -v get-modflow &> /dev/null
         then
@@ -161,7 +170,6 @@ runs:
           echo "get-modflow command not available, downloading install script"
           script_path="$RUNNER_TEMP/get_modflow.py"
           curl https://raw.githubusercontent.com/modflowpy/flopy/develop/flopy/utils/get_modflow.py -o "$script_path"
-          python3 -m pip install --quiet --disable-pip-version-check certifi || true
           cmd="python3 $script_path"
         fi
 
