@@ -161,6 +161,7 @@ runs:
           echo "get-modflow command not available, downloading install script"
           script_path="$RUNNER_TEMP/get_modflow.py"
           curl https://raw.githubusercontent.com/modflowpy/flopy/develop/flopy/utils/get_modflow.py -o "$script_path"
+          python3 -m pip install --quiet --disable-pip-version-check certifi || true
           cmd="python3 $script_path"
         fi
 
