@@ -122,7 +122,7 @@ The `ostag` input allows selecting a release by operating system. By default, th
 
 ### `retries`
 
-The download reaches out to GitHub and occasionally has its connection reset, failing the job before any subsequent step runs. The `retries` input is the number of extra attempts the action makes before giving up. The default is `3`. Set it to `0` to attempt the download only once.
+The `retries` input is the number of extra attempts the action makes to download the executables before giving up. The default is `3`. Set it to `0` to attempt the download only once.
 
 This value is also passed to `curl` (via `--retry`) for the release metadata and install script requests.
 
