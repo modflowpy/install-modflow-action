@@ -32,7 +32,15 @@ inputs:
     description: Operating system tag; default is to automatically choose.
     required: false
     default: ''
-  
+  retries:
+    description: Number of times to retry the download if it fails (e.g. a reset connection). Set to 0 to disable.
+    required: false
+    default: '3'
+  retry_wait_seconds:
+    description: Seconds to wait between download attempts.
+    required: false
+    default: '5'
+
 outputs:
   cache-hit:
     description: Whether the installation was restored from cache
@@ -79,7 +87,7 @@ runs:
       shell: bash
       run: |
         # get info for the executables repository's latest release
-        release_json=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/${{ inputs.owner }}/${{ inputs.repo }}/releases/latest") || echo "No release to check, skipping"
+        release_json=$(curl --retry ${{ inputs.retries }} --retry-all-errors --retry-delay ${{ inputs.retry_wait_seconds }} -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/${{ inputs.owner }}/${{ inputs.repo }}/releases/latest") || echo "No release to check, skipping"
 
         # get asset ID of the release's metadata file, if one exists
         get_download_url="
@@ -97,7 +105,7 @@ runs:
         # asset_id is empty if code.json asset wasn't found on the release
         if [[ -n "$download_url" ]]; then
           echo "Downloading code.json from $download_url to $code_json"
-          curl -L -H "Authorization: Bearer $GH_TOKEN" "$download_url" >> "$code_json"
+          curl -L --retry ${{ inputs.retries }} --retry-all-errors --retry-delay ${{ inputs.retry_wait_seconds }} -H "Authorization: Bearer $GH_TOKEN" "$download_url" >> "$code_json"
           echo "Found code.json for distribution '${{ inputs.repo }}' with contents:"
           cat "$code_json"
         else
@@ -161,6 +169,10 @@ runs:
           export SSL_CERT_FILE="$cert_file"
         fi
 
+        retries="${{ inputs.retries }}"
+        wait_seconds="${{ inputs.retry_wait_seconds }}"
+        max_attempts=$((retries + 1))
+
         # download the installation script if necessary
         if command -v get-modflow &> /dev/null
         then
@@ -169,12 +181,26 @@ runs:
         else
           echo "get-modflow command not available, downloading install script"
           script_path="$RUNNER_TEMP/get_modflow.py"
-          curl https://raw.githubusercontent.com/modflowpy/flopy/develop/flopy/utils/get_modflow.py -o "$script_path"
+          curl --fail --silent --show-error --location \
+            --retry "$retries" --retry-all-errors --retry-delay "$wait_seconds" \
+            https://raw.githubusercontent.com/modflowpy/flopy/develop/flopy/utils/get_modflow.py -o "$script_path"
           cmd="python3 $script_path"
         fi
 
+        # the download reaches out to github and occasionally has its connection
+        # reset, so retry a few times before giving up (see the retries input)
         echo "starting installation"
-        $cmd $MODFLOW_BIN_PATH $args
+        attempt=1
+        until $cmd $MODFLOW_BIN_PATH $args; do
+          status=$?
+          if [ "$attempt" -ge "$max_attempts" ]; then
+            echo "get-modflow failed after $attempt attempt(s) (exit $status)"
+            exit $status
+          fi
+          echo "get-modflow attempt $attempt/$max_attempts failed (exit $status); retrying in ${wait_seconds}s"
+          attempt=$((attempt + 1))
+          sleep "$wait_seconds"
+        done
       env:
         GITHUB_TOKEN: ${{ steps.set-github-token.outputs.token }}
 

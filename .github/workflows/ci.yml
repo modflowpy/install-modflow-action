@@ -160,6 +160,43 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
+  test_retries:
+    name: Test retry inputs
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+
+      - name: Checkout repo
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.10"
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: pip install -r test/requirements.txt
+
+      - name: Install executables
+        uses: ./
+        with:
+          path: ""
+          cache: 'false'
+          retries: 5
+          retry_wait_seconds: 1
+
+      - name: Test installation
+        run: python test/test.py "" "executables"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   test_tag:
     name: Test release tag input
     runs-on: ${{ matrix.os }}

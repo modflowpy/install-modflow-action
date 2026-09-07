@@ -21,6 +21,8 @@ An action to setup MODFLOW 6 and related programs.
   - [`subset`](#subset)
   - [`cache`](#cache)
   - [`ostag`](#ostag)
+  - [`retries`](#retries)
+  - [`retry_wait_seconds`](#retry_wait_seconds)
 - [Outputs](#outputs)
   - [`cache-hit`](#cache-hit)
 - [MODFLOW Resources](#modflow-resources)
@@ -66,6 +68,8 @@ The action accepts the following optional inputs:
 - `owner`
 - `path`
 - `repo`
+- `retries`
+- `retry_wait_seconds`
 - `subset`
 - `tag`
 
@@ -115,6 +119,16 @@ The `cache` input is a boolean that controls whether the action caches the MODFL
 ### `ostag`
 
 The `ostag` input allows selecting a release by operating system. By default, this is the system the action is running on. Typically one will not need to override this default &mdash; one reason to do so is to select an Intel macOS distribution on an ARM macOS runner.
+
+### `retries`
+
+The download reaches out to GitHub and occasionally has its connection reset, failing the job before any subsequent step runs. The `retries` input is the number of extra attempts the action makes before giving up. The default is `3`. Set it to `0` to attempt the download only once.
+
+This value is also passed to `curl` (via `--retry`) for the release metadata and install script requests.
+
+### `retry_wait_seconds`
+
+The number of seconds to wait between download attempts. The default is `5`.
 
 ## Outputs
 
