@@ -87,7 +87,7 @@ runs:
       shell: bash
       run: |
         # get info for the executables repository's latest release
-        release_json=$(curl --retry ${{ inputs.retries }} --retry-all-errors --retry-delay ${{ inputs.retry_wait_seconds }} -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/${{ inputs.owner }}/${{ inputs.repo }}/releases/latest") || echo "No release to check, skipping"
+        release_json=$(curl -fsSL --retry ${{ inputs.retries }} --retry-all-errors --retry-delay ${{ inputs.retry_wait_seconds }} -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/${{ inputs.owner }}/${{ inputs.repo }}/releases/latest") || echo "No release to check, skipping"
 
         # get asset ID of the release's metadata file, if one exists
         get_download_url="
@@ -95,7 +95,7 @@ runs:
         import sys
         pattern = 'code.json'
         release = json.load(sys.stdin, strict=False)
-        metadata = next(iter([a for a in release['assets'] if a['name'] == pattern]), None)
+        metadata = next(iter([a for a in release.get('assets', []) if a['name'] == pattern]), None)
         print(dict(metadata)['browser_download_url'] if metadata else '')
         "
         download_url=$(echo "$release_json" | python3 -c "$get_download_url") || echo "No release to check, skipping"
@@ -105,7 +105,7 @@ runs:
         # asset_id is empty if code.json asset wasn't found on the release
         if [[ -n "$download_url" ]]; then
           echo "Downloading code.json from $download_url to $code_json"
-          curl -L --retry ${{ inputs.retries }} --retry-all-errors --retry-delay ${{ inputs.retry_wait_seconds }} -H "Authorization: Bearer $GH_TOKEN" "$download_url" >> "$code_json"
+          curl -fsSL --retry ${{ inputs.retries }} --retry-all-errors --retry-delay ${{ inputs.retry_wait_seconds }} -H "Authorization: Bearer $GH_TOKEN" "$download_url" >> "$code_json"
           echo "Found code.json for distribution '${{ inputs.repo }}' with contents:"
           cat "$code_json"
         else
